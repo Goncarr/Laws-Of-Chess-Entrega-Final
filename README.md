@@ -1,10 +1,7 @@
-REPOS LINK https://github.com/LPn2024111863/Laws-of-Chess-Entrega-3
-
 # Laws of Chess
 
-Laws of Chess is a multiplayer, client-server chess game implemented in Python. This game bring special cards to the game to make it more thoughtfull and inovative.
-The application features a robust server that handles matchmaking, game logic, and concurrent matches, along with separate clients for players and server administrators.
-
+Laws of Chess is a multiplayer, client-server chess game implemented in Python. This game brings special cards to the game to make it more thoughtful and innovative.
+The application features a robust server that handles matchmaking, game logic, and concurrent matches, along with separate clients for players and server administrators (Gestores).
 
 ## Members of the group
 * Gonçalo Arruda - 2024109624
@@ -12,108 +9,81 @@ The application features a robust server that handles matchmaking, game logic, a
 
 ## Features
 
-*   **Client-Server Architecture**: A dedicated server manages game state, connections, and matchmaking, allowing multiple games to run concurrently.
-*   **Multiplayer Matchmaking**: Players can join a queue and be automatically matched with an opponent to start a game.
-*   **Innovative Card System**: Adds a unique twist to classic chess with special abilities.
-    *   **BlockRow**: Temporarily makes an entire row on the board impassable.
-    *   **Impressment**: Provides a chance to steal an opponent's piece and convert it to your side.
-    *   **Promotion**: Instantly upgrade one of your pieces (e.g., Pawn to Bishop/Knight, Rook to Queen).
-*   **Card Acquisition Minigame**: During a match, players can compete in a quick minigame to acquire the cards.
-*   **Administrator Client**: A separate terminal client for administrators to monitor the server's status, including the number of online players and active games.
-*   **Complete Chess Logic**: Implements all standard chess rules, including piece movements, check, checkmate, and stalemate detection.
-*   **Account System**: Players can log into accounts and the system tracks wins. **This is still under work**
-
+* **Client-Server Architecture**: A dedicated server manages game state, connections, and matchmaking, allowing multiple games to run concurrently.
+* **Multiplayer Matchmaking**: Players can join a queue and be automatically matched with an opponent to start a game. It includes "Pulse Checks" to prevent matching with disconnected "ghost" sockets.
+* **Innovative Card System**: Adds a unique twist to classic chess with special abilities.
+    * **BlockRow**: Temporarily makes an entire row on the board impassable.
+    * **Impressment**: Provides a chance to steal an opponent's piece and convert it to your side.
+    * **Promotion**: Instantly upgrade one of your pieces.
+* **Card Acquisition Minigame**: During a match, players have a random chance to compete in a quick reflex minigame to acquire a random card.
+* **Gestor (Administrator) Client**: A separate terminal client for administrators to monitor the server's status, including the number of online players and active games.
+* **Complete Chess Logic**: Implements standard chess rules, including piece movements, check, checkmate, stalemate detection, and **En Passant**.
+* **Account System**: Players can log into accounts, saving their username for the match.
 
 ## Project Structure
 
 The repository is organized into three main components:
 
-*   `jogo/servidor/`: Contains all the server-side logic.
-    *   `maquina/`: The main server entry point that listens for and handles new connections.
-    *   `matches/`: Manages the matchmaking queue (`MatchManager`) and individual game sessions (`Match`).
-    *   `pieces/`: Defines the behavior and movement rules for each chess piece.
-    *   `cards/`: Implements the logic for the special ability cards.
-    *   `accounts/`: Handles user account creation and data storage.
-    *   `processing_files/`: Manages communication threads for clients and administrators.
-*   `jogo/cliente/`: The player client application.
-    *   `interface/`: The command-line interface for players to interact with the game. Also includes a partial implementation of Pygame Interface.
-*   `jogo/administrator/`: The administrator client application.
-    *   `interface/`: The command-line interface for administrators to query server stats.
+* `jogo/servidor/`: Contains all the server-side logic.
+    * `maquina/`: The main server entry point (`maquina.py`) that binds sockets and routes new connections.
+    * `matches/`: Manages the matchmaking queue (`matchManager.py`) and individual game sessions (`match.py`).
+    * `pieces/`: Defines the behavior and movement rules for each chess piece.
+    * `cards/`: Implements the logic and turn-based expiration for the special ability cards.
+    * `accounts/`: Handles user account data storage (`accounts.json`).
+    * `processing_files/`: Manages communication threads (`processa_cliente.py` and `processa_gestor.py`).
+* `jogo/cliente/`: The player client application.
+* `jogo/gestor/` (Administrator): The administrator client application to query server stats.
+
+## Connections and Architecture
+
+The game relies heavily on TCP Sockets, sending data using a custom protocol that first sends the integer size of the payload, followed by the encoded JSON data or string. 
+* **Connection Handoff:** When a player connects, a temporary thread handles their menu navigation. Once they join matchmaking, the socket is handed over to the `MatchManager` and the menu thread terminates. 
+* **Pulse Checking:** Before matching two players, the `MatchManager` uses `select.select()` to ping the waiting socket. If it detects a "ghost" connection (a player who closed the game while in the queue), it drops them and waits for a valid opponent.
 
 
 ## Thread Functionalities
 
-The program is made with three main threads that can be created:
+The server scales by utilizing multiple threads for different connection scopes:
 
-* `ProcessaCliente`: This thread is responsible to handle the client's messages and each thread holds one client, making available the possibility to have many at the same time.
-    *   Started at: `maquina`, where the server checks for the client's ID and starts this thread if it corresponds to a client.
-      
-* `ProcessaAdministrador`: This thread is responsible to handle the administrator's messages and each thread holds one administrator, making available the possibility to have many  at the same time.
-   *   Started at: `maquina`, where the server checks for the administrator's ID and starts this thread if ID corresponds to a administrator.   
+* `ProcessaCliente`: Responsible for handling a client's pre-game messages (Login and Play). 
+    * **Started at:** `maquina.py`, when a new connection is identified as a standard client.
+    * **Lifecycle:** If a user selects `play`, this thread passes the socket to the `MatchManager` queue and gracefully exits to save server resources.
+* `ProcessaGestor` (Administrator): Responsible for handling the administrator's constant ping requests for server metrics.
+    * **Started at:** `maquina.py`, when the connection identifies with the `GESTOR_ID`.
+    * **Lifecycle:** Stays alive in a loop, answering `online` and `games` requests until the admin disconnects.
+* `Match Thread`: Responsible for handling the complete gameplay loop between two specific players.
+    * **Started at:** `MatchManager`, when two active, verified sockets are in the queue. It creates a `Match` instance and starts its `start_game` method in a Daemon thread.
 
-*  `Start_game`: This thread is responsible to handle the game between two players.  
-   *   Started at: `matchManager`, being accessed by `ProcessaCliente`. When a client selects `play`, it is redirected into the matchmaking queue. If it is possible to start a game (there are two players in the queue), the thread starts and the game can begin. If not, the client is prompted to wait and no input can be made until someone joins the queue and the game starts. 
+## Game Logic and Rules
 
-## Pygame Functionalities
+Once matched, players are assigned White or Black and exchange names. The `Match` class generates a fresh board map for the specific session.
+* **Turn Cycle:** The server sends the board state to both clients, announces whose turn it is, rolls for a minigame, and requests a command (`SELECT` a piece or use `CARDS`).
+* **Rule Enforcement:** The server validates if the origin square is valid, calculates all available valid moves, and sends them to the client.
+* **En Passant:** Fully tracked on the server. If a Pawn moves two squares, it is temporarily marked as the `EN_PASSANT_TARGET` for that specific turn window.
+* **Win Conditions:** After every move, the server evaluates the opponent's King to check if the match status is `ACTIVE`, `CHECK`, `CHECKMATE`, or `STALEMATE`, ending the thread and closing sockets if the game concludes.
 
-To make the game have an interface, the Pygame library had to be implemented, which was implemented in the `jogo/cliente/interface`.
+## Cards and Minigame
 
-* `Game State`: Some important aspects about the game such as messages, avaiable move visualization and the state of the game (if the player is in the menu, waiting or playing)
+The card system drastically shifts normal chess mechanics.
+* **The Minigame:** At the beginning of every turn, there is a 1-in-6 chance (`_minigame_chance_factor = 5`) that a reflex minigame triggers. The server sleeps for a random duration (1-10 seconds) and broadcasts a random lowercase letter. The first player to input that exact letter with the lowest latency wins a random card (BlockRow, Promotion, or Impressment).
+* **Card Usage:** A player can type the `CARDS` command instead of moving a piece. Active effects (like `BlockRow`) are stored in `self.active_effects` and will be automatically reverted by the server once their turn duration expires.
 
-* `Drawing Functions`: These functions act as a building tool to make the visual elements on the screen. 
-    * `_draw_board` draws the 8 by 8 squared chess board; 
-    * `_draw_panel` draws the rectangles that notifies the players about the turns, log messages and cards (to be implemented)
-    * `_draw_minigame` draws the minigame information on the screen, in front of the board, displaying how much time has elapsed and the letter to press.
-    * `_draw_input` draws the input part of the minigame.
-    * `_draw_menu` draws the main menu when a player joins, permiting choosing between joining the matchmaking queue, logging in or quitting the game.
-    * `_draw_input_overlay` draws the input for the login name while using the menu.
-    * `_draw_waiting` draws the waiting screen while a game is not avaiable to begin.
-    * `_draw_game` calls the functions related to drawing each element of the board.
+## Game Messages / Client Commands
 
-* `Game Handlers`: These functions allow for a better management of the event done while on the menu or the game.
-    * `_handle_menu` checks for the player's action and starts the `_play_thread` if the requirements are met.
-    * `_handle_game` checks for the events while in a game, such as touching the board, the minigame, cards (to be implemented)
+**Pre-Game (Client -> Server):**
+* `login`: Prompts for a username to authenticate.
+* `play`: Puts the socket into the matchmaking queue.
+* `.`: Disconnects.
 
-* `Auxiliary Functions`: Other functions that act as helpers for communication or don't fall in the previous categories.
-    * `_quit` is called to terminate the connection and exit the pygame.
-    * `_do_login` is called to check the result of the login (success or error)
-    * `_do_choices` is called to allow communication about the player's moves in a game, either being pieces or cards.
-    * `_play_thread` is called to allow communication with the server about the game board and other aspects such as minigames. 
+**In-Game (Server -> Client Protocol):**
+* `MOVE` / `WAIT`: The server dictates who is allowed to send input. The waiting player's client gets locked.
+* `VALID_SQUARE` / `INVALID_COMMAND`: Validation responses when selecting pieces.
+* `OPP: [name]`: Broadcasts the opponent's name at the start.
 
-* `execute`: Function that calls the game handlers and also the main drawing functions so the game can run smoothly. It checks for the game's status and acts accordingly to it.
+**In-Game (Client -> Server Protocol):**
+* `select`: Tell the server you intend to move a piece. You will provide the piece coordinates.
+* `cards`: Tell the server you want to look at your inventory and deploy a card effect.
 
-## How to Play
-
-### Player Client Commands
-
-Once the client is running, you can use the following commands:
-
-*   `login`: Prompts for a username to log into an account stored in `accounts.json`.
-*   `play`: Enters the matchmaking queue. The server will pair you with the next available player.
-*   `.`: Disconnects the client from the server.
-
-**In-Game Commands:**
-
-*   `select`: During your turn, use this command to choose a piece to move. You will be prompted to enter the piece's square (e.g., `e2`) and then the destination square (e.g., `e4`).
-*   `cards`: During your turn, use this command to view your available cards and choose one to play.
-
-### Administrator Client Commands
-
-The administrator client provides a simple interface for monitoring the server:
-
-*   `online`: Displays the current number of players connected to the server.
-*   `games`: Displays the number of matches currently in progress.
-*   `.`: Disconnects the administrator client.
-
-
-## Next Features and Validations to be implemented
-
-The next steps of this project include:
-*   Validation: A revaluation of the code to check for more errors or missing areas that might trigger inconsistencies.
-*   Chess Moves: Castling and En Passant will be implemented in the future.
-*   Progress Tracking: The accounts will be implemented in more detail so the players can check the wins, losses and win/lose ratio.
-*   Cards: New cards will be implemented with new abilities to use during the game!
-*   Timer: A timer will be implemented to limit the time the player has to play in a round.
-*   Game Modes: Laws of Chess contains currently only the full board of pieces. Further down the project will include situations like mid game or end game so player can enjoy different scenarios.
-*   Pygame: Finish Pygame implementation / Seperate this implementation from the main functions in `jogo/cliente/interface` (if possible in the current time avaiable)
-*   Administrator: Administrators will have more functionalities regarding the game's status and modifying it. (This will be optional according to time constraints)
+**Gestor Commands:**
+* `online`: Returns the count of connected clients.
+* `games`: Returns the length of `active_matches`.

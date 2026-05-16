@@ -19,48 +19,49 @@ class Promotion(Card):
     def __init__(self, name: str):
         super().__init__(name)
 
-    def effect(self, piece_coordinates: str, evol: str, board: list[list]):
+    def effect(self, piece_coordinates: str, evol: str, board: list[list], white_map: dict, black_map: dict):
         current_x = servidor.letter.index(piece_coordinates[0])
         current_y = 8 - int(piece_coordinates[1])
 
-        old_piece:Piece = board[current_y][current_x]
+        old_piece: Piece = board[current_y][current_x]
+        if old_piece == "  ":
+            print("Nenhuma peça selecionada para evolução!")
+            return False
+
         print(old_piece.piece)
         color = old_piece.piece[0]
         new_piece = None
 
-        #Queens and kings cannot be upgraded
-        if isinstance(old_piece, Queen) or isinstance(old_piece.piece, King):
+        if isinstance(old_piece, Queen) or isinstance(old_piece,
+                                                      King):
             print("You can't upgrade a queen or king!")
             return False
 
-        # Check which piece it needs to upgrade to
-        elif isinstance(old_piece,Pawn):
+        elif isinstance(old_piece, Pawn):
             match evol.lower():
                 case "knight":
                     new_piece = Knight(f"{color}T", piece_coordinates)
                 case "bishop":
                     new_piece = Bishop(f"{color}B", piece_coordinates)
 
-        elif isinstance(old_piece,Bishop) or isinstance(old_piece, Knight):
+        elif isinstance(old_piece, Bishop) or isinstance(old_piece, Knight):
             new_piece = Rook(f"{color}R", piece_coordinates)
 
         elif isinstance(old_piece, Rook):
-                new_piece = Queen(f"{color}Q", piece_coordinates)
-
+            new_piece = Queen(f"{color}Q", piece_coordinates)
 
         if new_piece is None:
             print("This piece does not exist!")
             return False
 
-        #check which colors board needs to make changes
-        if new_piece:
-            if old_piece.piece[0] == "w":
-                servidor.DEFAULT_WHITE_BOARD_MAP[old_piece.piece].remove(old_piece)
-                servidor.DEFAULT_WHITE_BOARD_MAP[new_piece.piece].append(new_piece)
-            else:
-                servidor.DEFAULT_BLACK_BOARD_MAP[old_piece.piece].remove(old_piece)
-                servidor.DEFAULT_BLACK_BOARD_MAP[new_piece.piece].append(new_piece)
+        # Modificar os mapas específicos da partida instanciada
+        if old_piece.piece[0] == "w":
+            white_map[old_piece.piece].remove(old_piece)
+            white_map[new_piece.piece].append(new_piece)
+        else:
+            black_map[old_piece.piece].remove(old_piece)
+            black_map[new_piece.piece].append(new_piece)
 
-            return True
-
-        return False
+        # Atualiza a referência física no tabuleiro diretamente
+        board[current_y][current_x] = new_piece
+        return True

@@ -25,6 +25,7 @@ class Match:
         self.status = None
         self.player_turn = 0
         self._lock = threading.Lock()
+        self._minigame_chance_factor = 5
 
     # ---------------------- interaction with sockets ------------------------------
 
@@ -160,23 +161,26 @@ class Match:
         card_use_index = self.receive_object(current)  # Receives player's choice
         print(self._current_cards())
         card_use = self._current_cards()[card_use_index]
+
         if card_use.name == "BlockRow":
             row = self.receive_object(current)
             card_use.use_card(self.player_turn)
             card_use.effect(row, board.board)
             self.active_effects.append(card_use)
             self._current_cards().pop(card_use_index)
+
         elif card_use.name == "Impressment":
             piece = self.receive_object(current)
-            card_use.effect(piece, board.board)
+            # Apenas chama o efeito passando os mapas
+            card_use.effect(piece, board.board, self.white_map, self.black_map)
             self._current_cards().pop(card_use_index)
 
         elif card_use.name == "Promotion":
             piece = self.receive_object(current)
             promotion = self.receive_object(current)
-            card_use.effect(piece, promotion, board.board)
+            # Apenas chama o efeito passando os mapas
+            card_use.effect(piece, promotion, board.board, self.white_map, self.black_map)
             self._current_cards().pop(card_use_index)
-            board.put_pieces(self.white_map, self.black_map)
 
         self._clear_en_passant(self._current_color())
 
@@ -282,7 +286,7 @@ class Match:
                 self._notify_turn()
 
                 # Card acquiring minigame
-                chance = random.randint(0,2)
+                chance = random.randint(0,self._minigame_chance_factor)
                 if chance == 0:
                     self._broadcast(servidor.CARDMINIGAME)
                     self._card_minigame()

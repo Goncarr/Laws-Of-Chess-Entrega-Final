@@ -537,14 +537,20 @@ class Interface:
         s = pygame.Surface((WINDOW_W, WINDOW_H), pygame.SRCALPHA)
         s.fill((0, 0, 0, 180))
         self.screen.blit(s, (0, 0))
-        box = pygame.Rect(WINDOW_W // 2 - 220, WINDOW_H // 2 - 110, 440, 220)
+
+        # Painel ainda maior (800x400) e centrado no ecrã (O ecrã total tem 1000x800)
+        box_w, box_h = 900, 400
+        box = pygame.Rect(WINDOW_W // 2 - box_w // 2, WINDOW_H // 2 - box_h // 2, box_w, box_h)
+
         draw_rrect(self.screen, (55, 55, 55), box, 14)
         pygame.draw.rect(self.screen, (212, 175, 55), box, 2, border_radius=14)
+
+        # Textos ajustados com espaçamento proporcional e fontes maiores para melhor leitura
         for i, (text, font, color, dy) in enumerate([
-            ("Card Minigame!", self.font_md, (212, 175, 55), 18),
-            (self.minigame_prompt, self.font_lg, (230, 230, 230), 60),
-            ("Press the key on your keyboard!", self.font_sm, (100, 180, 255), 118),
-            (f"Elapsed: {time.time() - self.minigame_start:.2f}s", self.font_sm, (200, 200, 100), 154),
+            ("Card Minigame!", self.font_lg, (212, 175, 55), 40),  # Título maior
+            (self.minigame_prompt, self.font_lg, (230, 230, 230), 140),  # Letra pedida
+            ("Press the key on your keyboard!", self.font_md, (100, 180, 255), 250),  # Instrução
+            (f"Elapsed: {time.time() - self.minigame_start:.2f}s", self.font_md, (200, 200, 100), 320),  # Tempo
         ]):
             surf = font.render(text, True, color)
             self.screen.blit(surf, (box.centerx - surf.get_width() // 2, box.y + dy))
@@ -554,16 +560,31 @@ class Interface:
         s = pygame.Surface((WINDOW_W, WINDOW_H), pygame.SRCALPHA)
         s.fill((0, 0, 0, 160))
         self.screen.blit(s, (0, 0))
-        box = pygame.Rect(WINDOW_W // 2 - 200, WINDOW_H // 2 - 70, 400, 140)
+
+        # Painel aumentado para 650x200 para o texto da Promotion caber facilmente
+        box_w, box_h = 650, 200
+        box = pygame.Rect(WINDOW_W // 2 - box_w // 2, WINDOW_H // 2 - box_h // 2, box_w, box_h)
+
         draw_rrect(self.screen, (221, 221, 196), box, 12)
         pygame.draw.rect(self.screen, (86, 117, 52), box, 2, border_radius=12)
-        self.screen.blit(self.font_md.render(prompt, True, (0, 0, 0)), (box.x + 16, box.y + 16))
-        field = pygame.Rect(box.x + 16, box.y + 55, 370, 34)
+
+        # Texto da Prompt (ex: "Promote to...") centrado
+        prompt_surf = self.font_md.render(prompt, True, (0, 0, 0))
+        self.screen.blit(prompt_surf, (box.centerx - prompt_surf.get_width() // 2, box.y + 25))
+
+        # Caixa branca onde o texto é digitado
+        field_w, field_h = 550, 50
+        field = pygame.Rect(box.centerx - field_w // 2, box.y + 85, field_w, field_h)
         draw_rrect(self.screen, (255, 255, 255), field, 6)
         pygame.draw.rect(self.screen, (86, 117, 52), field, 2, border_radius=6)
-        self.screen.blit(self.font_md.render(self._input_text + "|", True, (0, 0, 0)), (field.x + 8, field.y + 5))
-        self.screen.blit(self.font_xs.render("Press Enter to confirm", True, (100, 100, 100)),
-                         (box.x + 16, box.y + 108))
+
+        # Texto que o jogador está a escrever
+        input_surf = self.font_md.render(self._input_text + "|", True, (0, 0, 0))
+        self.screen.blit(input_surf, (field.x + 15, field.y + 10))
+
+        # Texto de ajuda "Press Enter..." centrado na parte de baixo
+        help_surf = self.font_xs.render("Press Enter to confirm", True, (100, 100, 100))
+        self.screen.blit(help_surf, (box.centerx - help_surf.get_width() // 2, box.y + 155))
 
     def _draw_menu(self):
         self.screen.fill(C_BG)
