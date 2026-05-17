@@ -171,14 +171,12 @@ class Match:
 
         elif card_use.name == "Impressment":
             piece = self.receive_object(current)
-            # Apenas chama o efeito passando os mapas
             card_use.effect(piece, board.board, self.white_map, self.black_map)
             self._current_cards().pop(card_use_index)
 
         elif card_use.name == "Promotion":
             piece = self.receive_object(current)
             promotion = self.receive_object(current)
-            # Apenas chama o efeito passando os mapas
             card_use.effect(piece, promotion, board.board, self.white_map, self.black_map)
             self._current_cards().pop(card_use_index)
 

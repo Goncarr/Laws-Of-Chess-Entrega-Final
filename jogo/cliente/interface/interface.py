@@ -11,10 +11,9 @@ try:
 except ImportError:
     raise SystemExit("pygame is required: pip install pygame")
 
-# Window Dimensions & Layout
 WINDOW_W, WINDOW_H = 1000, 800
-SQUARE = 70  # Shrunk to 70 to fit perfectly between the top and bottom panels
-BOARD_X, BOARD_Y = 40, 120  # X shifted to 40 to center the board under the panels
+SQUARE = 70
+BOARD_X, BOARD_Y = 40, 120
 
 # Colors
 C_LIGHT = (221, 221, 196)
@@ -106,7 +105,7 @@ class Interface:
                 s.fill((150, 150, 150, 128))
                 return s
 
-        # Chess Pieces - scaled to fit within the 70x70 squares
+        # Chess Pieces
         self.piece_images = {
             "wK": load_scale('interface/assets/images/white_king.png', (70, 70)),
             "wQ": load_scale('interface/assets/images/white_queen.png', (70, 70)),
@@ -538,14 +537,12 @@ class Interface:
         s.fill((0, 0, 0, 180))
         self.screen.blit(s, (0, 0))
 
-        # Painel ainda maior (800x400) e centrado no ecrã (O ecrã total tem 1000x800)
         box_w, box_h = 900, 400
         box = pygame.Rect(WINDOW_W // 2 - box_w // 2, WINDOW_H // 2 - box_h // 2, box_w, box_h)
 
         draw_rrect(self.screen, (55, 55, 55), box, 14)
         pygame.draw.rect(self.screen, (212, 175, 55), box, 2, border_radius=14)
 
-        # Textos ajustados com espaçamento proporcional e fontes maiores para melhor leitura
         for i, (text, font, color, dy) in enumerate([
             ("Card Minigame!", self.font_lg, (212, 175, 55), 40),  # Título maior
             (self.minigame_prompt, self.font_lg, (230, 230, 230), 140),  # Letra pedida
@@ -561,28 +558,23 @@ class Interface:
         s.fill((0, 0, 0, 160))
         self.screen.blit(s, (0, 0))
 
-        # Painel aumentado para 650x200 para o texto da Promotion caber facilmente
         box_w, box_h = 650, 200
         box = pygame.Rect(WINDOW_W // 2 - box_w // 2, WINDOW_H // 2 - box_h // 2, box_w, box_h)
 
         draw_rrect(self.screen, (221, 221, 196), box, 12)
         pygame.draw.rect(self.screen, (86, 117, 52), box, 2, border_radius=12)
 
-        # Texto da Prompt (ex: "Promote to...") centrado
         prompt_surf = self.font_md.render(prompt, True, (0, 0, 0))
         self.screen.blit(prompt_surf, (box.centerx - prompt_surf.get_width() // 2, box.y + 25))
 
-        # Caixa branca onde o texto é digitado
         field_w, field_h = 550, 50
         field = pygame.Rect(box.centerx - field_w // 2, box.y + 85, field_w, field_h)
         draw_rrect(self.screen, (255, 255, 255), field, 6)
         pygame.draw.rect(self.screen, (86, 117, 52), field, 2, border_radius=6)
 
-        # Texto que o jogador está a escrever
         input_surf = self.font_md.render(self._input_text + "|", True, (0, 0, 0))
         self.screen.blit(input_surf, (field.x + 15, field.y + 10))
 
-        # Texto de ajuda "Press Enter..." centrado na parte de baixo
         help_surf = self.font_xs.render("Press Enter to confirm", True, (100, 100, 100))
         self.screen.blit(help_surf, (box.centerx - help_surf.get_width() // 2, box.y + 155))
 
