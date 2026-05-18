@@ -26,9 +26,9 @@ class Impressment(Card):
 
         impressed_piece: Piece = board[current_y][current_x]
 
-        # Validação caso a coordenada esteja vazia
+        # Validation for empty square
         if impressed_piece == "  ":
-            print("Nenhuma peça nessa posição!")
+            print("There isn't a piece in this square!")
             return False
 
         chance = randint(0, piece_type[impressed_piece.piece[1]])
@@ -38,7 +38,7 @@ class Impressment(Card):
             print("Failed at capturing the enemy piece!")
             return False
         else:
-            # Troca de donos usando os dicionários específicos da partida atual
+            # Changes the piece's team and update the both players' dictionaries
             if impressed_piece.piece[0] == "w":
                 white_map[impressed_piece.piece].remove(impressed_piece)
                 impressed_piece.piece = impressed_piece.piece.replace("w", "b")

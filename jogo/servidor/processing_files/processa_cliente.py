@@ -87,7 +87,7 @@ class ProcessaCliente(threading.Thread):
                     account = self.accounts.get_account(name)
                     if account:
                         status = "Valid Login!"
-                        self.player_name = name  # <--- SAVE THE NAME HERE
+                        self.player_name = name
                     else:
                         status = "Invalid Login!"
                     self.send_object(self.connection, status)

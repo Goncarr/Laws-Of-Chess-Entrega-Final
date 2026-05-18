@@ -54,7 +54,7 @@ class Promotion(Card):
             print("This piece does not exist!")
             return False
 
-        # Modificar os mapas específicos da partida instanciada
+        # Modifies the map for the match
         if old_piece.piece[0] == "w":
             white_map[old_piece.piece].remove(old_piece)
             white_map[new_piece.piece].append(new_piece)
@@ -62,6 +62,6 @@ class Promotion(Card):
             black_map[old_piece.piece].remove(old_piece)
             black_map[new_piece.piece].append(new_piece)
 
-        # Atualiza a referência física no tabuleiro diretamente
+        # Updates the piece's position
         board[current_y][current_x] = new_piece
         return True

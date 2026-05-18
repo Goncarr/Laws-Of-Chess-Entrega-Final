@@ -38,6 +38,21 @@ class Account:
             json.dump(data, file, indent=4)
 
 
+    def get_account(self, name):
+        """
+        Method that checks if a name of an account is in the file_path and, if it is,
+        returns it
+        :param name: Name to search through the file_path
+        :return: Returns the account's name
+        """
+        accounts = self._load()
+
+        if name not in accounts:
+            return False
+
+        return accounts[name]
+
+    #---------------Non-implemented CRUD Functions---------------#
     def create_account(self, name):
         """
         This method verifies if the name already exists. If not, creates the account.
@@ -55,20 +70,6 @@ class Account:
 
         self._save(accounts)
         return True
-
-    def get_account(self, name):
-        """
-        Method that checks if a name of an account is in the file_path and, if it is,
-        returns it
-        :param name: Name to search through the file_path
-        :return: Returns the account's name
-        """
-        accounts = self._load()
-
-        if name not in accounts:
-            return False
-
-        return accounts[name]
 
     def update_account(self, old_name, new_name):
         """

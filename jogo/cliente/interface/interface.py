@@ -4,7 +4,6 @@ import socket
 import time
 import threading
 import sys
-import os
 
 try:
     import pygame
@@ -19,7 +18,7 @@ BOARD_X, BOARD_Y = 40, 120
 C_LIGHT = (221, 221, 196)
 C_DARK = (118, 149, 84)
 C_SELECT = (220, 50, 50)
-C_MOVE = (106, 135, 66)
+C_MOVE = (255, 135, 0)
 C_CHECK = (220, 50, 50)
 C_BG = (40, 40, 40)
 C_BORDER = (86, 117, 52)
@@ -271,7 +270,6 @@ class Interface:
                     mg_result = self.receive_object(self.connection)
                     self._log(mg_result)
 
-                    # FIX 1: Auto-update the UI slots instantly by reading the result!
                     with self._net_lock:
                         for c_name in ["BlockRow", "Promotion", "Impressment"]:
                             if c_name in mg_result:
@@ -402,7 +400,6 @@ class Interface:
 
                         self.send_object(self.connection, piece)
 
-                    # FIX: Delete the card from the UI immediately so it disappears!
 
                     with self._net_lock:
 
@@ -701,7 +698,6 @@ class Interface:
             # card buttons
             for btn, idx in self.card_buttons:
                 if btn.collidepoint(pos) and self.is_my_turn:
-                    # FIX 2: Only trigger the server if the slot ACTUALLY has a card in it!
                     if idx < len(self.cards):
                         with self._net_lock:
                             self._action_choice = "cards"

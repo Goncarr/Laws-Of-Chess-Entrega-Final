@@ -4,7 +4,7 @@ import servidor
 from servidor.matches.match import Match
 import socket
 import threading
-import select  # <--- NEW IMPORT REQUIRED FOR THE PULSE CHECK
+import select
 
 
 class MatchManager:
@@ -59,7 +59,7 @@ class MatchManager:
 
     # ---------------------- match management ------------------------------
 
-    def add_player(self, player_socket, player_name):  # <--- Add player_name here
+    def add_player(self, player_socket, player_name):
         while not self.waiting_queue.empty():
             # Unpack the tuple from the queue
             opponent_socket, opponent_name = self.waiting_queue.get()

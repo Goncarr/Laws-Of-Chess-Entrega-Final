@@ -235,7 +235,6 @@ class Match:
 
         while True:
             # Verifies if player wants to select a piece
-            # (Later this will include card selection or forfeit)
             command = self.receive_str(current, servidor.COMMAND_SIZE)
             print(f"[DEBUG] command={repr(command)}")
 
@@ -246,7 +245,7 @@ class Match:
 
             elif command == servidor.CARDS:
                 self._use_cards(current, board)
-                return  # <--- ADD THIS RETURN STATEMENT TO END THE TURN!
+                return
 
             else:
                 self.send_object(current, servidor.INVALID_COMMAND)
